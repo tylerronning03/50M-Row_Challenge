@@ -1,100 +1,117 @@
-#include <stddef.h>
+#include <stddef.h>   // defines NULL
+#include <sys/mman.h> // allows for mmap
+#include <sys/stat.h> // allows for getting metadata from file including the size of the file for mmap
+#include <string.h>   // allows for strlen()
+#include <stdio.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <stdlib.h>
 
 #define tableSize 10000
-#define cityNameLength 101
-#define tempLength 6
+#define rowLength 107
+#define cityLength 101
 
-// know that using mmap will be useful when getting/opening file
-
-int main(int argc, char *argv[])
-{
-
-    return 0;
-    // open file
-    
-    // line by line
-
-    // add temp
-}
 /// @brief stores all information related to the city
-typedef struct City
+typedef struct
 {
-    char *cityName;
+    char cityName[cityLength];
     double sum;
     float max;
     float min;
     int tempsCount;
-};
+} City;
 
-/// @brief Table of buckets with length 10000(tableSize)
-typedef struct hTable
+/// @brief turns the name of the city into the index for storing, PsudoCode from https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
+/// @param city the name of the city upon which the hash func will create the index
+/// @return The index in the array where the city should be placed
+int hash(char *city)
 {
-    // array of city structs
-    struct City table[tableSize];
-};
+    long hashVal = 2166136261;
+    for (int i = 0; i < strlen(city); i++)
+    {
+        hashVal = hashVal ^ city[i];
+        hashVal = hashVal * 1099511628211;
+    }
+    return hashVal % tableSize;
+}
 
-void addTemp(struct hTable table, char *cityName, float temp)
+void addTemp(City *table, char *cityName, float temp)
 {
     // Check hash table for cityName
     int expectedLoc = hash(cityName);
 
     // search for city
     // 1. go to the expected location calculated above
-    if (table.table[expectedLoc].cityName == cityName) // it exists
-    { 
-        
-        table.table[expectedLoc].sum += temp; // add to sum
-        table.table[expectedLoc].tempsCount += 1; // add 1 to count
-    
-        if (table.table[expectedLoc].min > temp) // check against min and max
+    if (strcmp(table[expectedLoc].cityName, cityName) == 0) // it exists
+    {
+        //printf("City Found at expected Location");
+        table[expectedLoc].sum += temp;     // add to sum
+        table[expectedLoc].tempsCount += 1; // add 1 to count
+
+        if (table[expectedLoc].min > temp) // check against min and max
         {
-            table.table[expectedLoc].min = temp;
+            table[expectedLoc].min = temp;
         }
-        else if (table.table[expectedLoc].max < temp)
+        else if (table[expectedLoc].max < temp)
         {
-            table.table[expectedLoc].max = temp;
+            table[expectedLoc].max = temp;
         }
 
         return;
+    }
+    else if (!table[expectedLoc].cityName[0]) // Location == NULL
+    {
+        // add city at this pos
+            // set name
+            strcpy(table[expectedLoc].cityName, cityName);
+            // make max and min set to this value
+            table[expectedLoc].max = temp;
+            table[expectedLoc].min = temp;
+            // set sum to this value
+            table[expectedLoc].sum = temp;
+            table[expectedLoc].tempsCount = 1;
+
+            return;
     }
     // make new var for loop condition
     int searchLoc = expectedLoc + 1;
     while (searchLoc != expectedLoc)
     {
-        if (table.table[searchLoc].cityName == cityName)
+        if (strcmp(table[searchLoc].cityName, cityName) == 0)
         {
             // city found
-            table.table[searchLoc].sum += temp;
-            table.table[searchLoc].tempsCount += 1;
-            if (table.table[searchLoc].min > temp)
+            table[searchLoc].sum += temp;
+            table[searchLoc].tempsCount += 1;
+            if (table[searchLoc].min > temp)
             {
-                table.table[searchLoc].min = temp;
+                table[searchLoc].min = temp;
             }
-            else if (table.table[searchLoc].max < temp)
+            else if (table[searchLoc].max < temp)
             {
-                table.table[searchLoc].max = temp;
+                table[searchLoc].max = temp;
             }
 
             return;
         }
-        else if (table.table[searchLoc].cityName == NULL) // unsure about value being NULL
+        else if (!table[searchLoc].cityName[0]) // unsure about value being NULL
         {
             // add city at this pos
-            table.table[searchLoc].cityName = cityName;
-            table.table[searchLoc].max = temp;
-            table.table[searchLoc].min = temp;
-            table.table[searchLoc].sum = temp;
-            table.table[searchLoc].tempsCount = 1;
-            // make max and min set to this value
             // set name
+            strcpy(table[searchLoc].cityName, cityName);
+            // make max and min set to this value
+            table[searchLoc].max = temp;
+            table[searchLoc].min = temp;
             // set sum to this value
+            table[searchLoc].sum = temp;
+            table[searchLoc].tempsCount = 1;
+
             return;
         }
         // if the bucket is not the city and not NULL it is filled so go to next bucket due to linear searching
         // if we reach the end of the table, loop back to the front
         if (searchLoc == tableSize - 1)
         {
-            searchLoc = 0;
+            searchLoc = (searchLoc + 1)%tableSize;
         }
         // otherwise move to next bucket for searching
         else
@@ -103,16 +120,92 @@ void addTemp(struct hTable table, char *cityName, float temp)
         }
     }
 };
-/// @brief turns the name of the city into the index for storing, PsudoCode from https://en.wikipedia.org/wiki/Fowler%E2%80%93Noll%E2%80%93Vo_hash_function
-/// @param city the name of the city upon which the hash func will create the index
-/// @return The index in the array where the city should be placed
-int hash(char *city)
+
+void print(City *table) 
 {
-    int hashVal = 2166136261;
-    for (int i = 0; i < strlen(city); i++)
+    FILE* file = fopen("output.txt", "w");
+    for (int i = 0; i < tableSize - 1; i += 1)
     {
-        hashVal = hashVal ^ city[i];
-        hashVal = hashVal * 1099511628211;
+        if (table[i].cityName[0])
+        {
+            fprintf(file, "%s, %.1f, %.1f, %.1f\n", table[i].cityName, table[i].min, (float)table[i].sum / table[i].tempsCount, table[i].max);
+        }
+        /*
+        if (table[i + 1].cityName[0])
+        {
+            fprintf(file,"%s, %.1f, %.1f, %.1f\n", table[+1].cityName, table[i + 1].min, (float)table[i + 1].sum / table[i + 1].tempsCount, table[i + 1].max);
+        }
+        if (table[i + 2].cityName[0])
+        {
+            fprintf(file,"%s, %.1f, %.1f, %.1f\n", table[i + 2].cityName, table[i + 2].min, (float)table[i + 2].sum / table[i + 2].tempsCount, table[i + 2].max);
+        }
+        if (table[i + 3].cityName[0])
+        {
+            fprintf(file,"%s, %.1f, %.1f, %.1f\n", table[i + 3].cityName, table[i + 3].min, (float)table[i + 3].sum / table[i + 3].tempsCount, table[i + 3].max);
+        }
+        */
+        
     }
-    return;
+    fclose(file);
+};
+
+int main(int argc, char *argv[])
+{
+    City hashTable[tableSize]; // create hash table
+    memset(hashTable, 0, tableSize * sizeof(City));
+    
+    //char *file = argv[1];
+    char file[] = "test1.txt";
+    // open file
+    int fd = open(file, O_RDONLY);
+    if (fd == -1)
+    {
+        perror("open");
+        return 1;
+    }
+
+    struct stat sb; // used to get file size
+    if (fstat(fd, &sb) == -1)
+    {
+        perror("fstat");
+        return 1;
+    }
+
+    char *data = mmap(NULL, sb.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    if (data == MAP_FAILED)
+    {
+        fprintf(stderr, "Mmap failed, errno: %d\n", errno); // from powerpoint
+    }
+    // line by line
+    char* currLine;
+    currLine = data;
+    char* eof = data + sb.st_size;
+    int lineCounter = 1;
+    while (currLine < eof)
+    {
+        char* newLineEnd;
+        newLineEnd = strpbrk(currLine, "\n");
+        if (newLineEnd == NULL) {/*Last Line*/ 
+        newLineEnd = eof;
+
+        }
+        size_t lineLength = newLineEnd - currLine;
+        char fullLine[lineLength + 1];
+        memcpy(fullLine, currLine, lineLength);
+    
+        char* endOfCity = strpbrk(currLine, ";");
+        if (endOfCity == NULL) {fprintf(stderr, "No Simicolin present"); currLine = newLineEnd + 1; continue;}
+
+        char cityName[cityLength];
+        size_t n = endOfCity - currLine;
+        memcpy(cityName, fullLine, n);
+        cityName[cityLength-1] = '\0';
+        float temp = strtof(endOfCity + 1, NULL);
+        // add temp
+        addTemp(hashTable, cityName, temp);
+        lineCounter += 1;
+        currLine = newLineEnd + 1;
+    }
+    print(hashTable);
+    return 0;
 }
