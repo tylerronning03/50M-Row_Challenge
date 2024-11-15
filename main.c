@@ -6,6 +6,8 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stdint.h>
+#include <unistd.h>
 
 #define tableSize 10000
 #define rowLength 107
@@ -26,11 +28,11 @@ typedef struct
 /// @return The index in the array where the city should be placed
 int hash(char *city)
 {
-    long hashVal = 2166136261;
+    unsigned int hashVal = 2166136261;
     for (int i = 0; i < strlen(city); i++)
     {
-        hashVal = hashVal ^ city[i];
-        hashVal = hashVal * 1099511628211;
+        hashVal ^= (unsigned)city[i];
+        hashVal = hashVal * (uint64_t)1099511628211;
     }
     return hashVal % tableSize;
 }
@@ -130,20 +132,6 @@ void print(City *table)
         {
             fprintf(file, "%s, %.1f, %.1f, %.1f\n", table[i].cityName, table[i].min, (float)table[i].sum / table[i].tempsCount, table[i].max);
         }
-        /*
-        if (table[i + 1].cityName[0])
-        {
-            fprintf(file,"%s, %.1f, %.1f, %.1f\n", table[+1].cityName, table[i + 1].min, (float)table[i + 1].sum / table[i + 1].tempsCount, table[i + 1].max);
-        }
-        if (table[i + 2].cityName[0])
-        {
-            fprintf(file,"%s, %.1f, %.1f, %.1f\n", table[i + 2].cityName, table[i + 2].min, (float)table[i + 2].sum / table[i + 2].tempsCount, table[i + 2].max);
-        }
-        if (table[i + 3].cityName[0])
-        {
-            fprintf(file,"%s, %.1f, %.1f, %.1f\n", table[i + 3].cityName, table[i + 3].min, (float)table[i + 3].sum / table[i + 3].tempsCount, table[i + 3].max);
-        }
-        */
         
     }
     fclose(file);
@@ -154,8 +142,8 @@ int main(int argc, char *argv[])
     City hashTable[tableSize]; // create hash table
     memset(hashTable, 0, tableSize * sizeof(City));
     
-    //char *file = argv[1];
-    char file[] = "test1.txt";
+    char *file = argv[1];
+    //char file[] = "measurements.txt";
     // open file
     int fd = open(file, O_RDONLY);
     if (fd == -1)
@@ -180,30 +168,29 @@ int main(int argc, char *argv[])
     char* currLine;
     currLine = data;
     char* eof = data + sb.st_size;
-    int lineCounter = 1;
+
     while (currLine < eof)
     {
         char* newLineEnd;
         newLineEnd = strpbrk(currLine, "\n");
-        if (newLineEnd == NULL) {/*Last Line*/ 
+        if (newLineEnd == NULL) {//Last Line
         newLineEnd = eof;
-
         }
         size_t lineLength = newLineEnd - currLine;
         char fullLine[lineLength + 1];
         memcpy(fullLine, currLine, lineLength);
-    
+
         char* endOfCity = strpbrk(currLine, ";");
         if (endOfCity == NULL) {fprintf(stderr, "No Simicolin present"); currLine = newLineEnd + 1; continue;}
-
-        char cityName[cityLength];
+        
         size_t n = endOfCity - currLine;
+        char cityName[n + 1];
+        
         memcpy(cityName, fullLine, n);
-        cityName[cityLength-1] = '\0';
+        cityName[n] = '\0';
         float temp = strtof(endOfCity + 1, NULL);
         // add temp
         addTemp(hashTable, cityName, temp);
-        lineCounter += 1;
         currLine = newLineEnd + 1;
     }
     print(hashTable);

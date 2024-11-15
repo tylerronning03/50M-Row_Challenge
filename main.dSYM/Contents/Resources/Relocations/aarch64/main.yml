@@ -2,9 +2,9 @@
 triple:          'arm64-apple-darwin'
 binary-path:     '/Users/tyler/GitHub/50M-Row_Challenge/main'
 relocations:
-  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _hash, symObjAddr: 0x0, symBinAddr: 0x10000356C, symSize: 0xAC }
-  - { offsetInCU: 0x49, offset: 0x49, size: 0x8, addend: 0x0, symName: _hash, symObjAddr: 0x0, symBinAddr: 0x10000356C, symSize: 0xAC }
-  - { offsetInCU: 0x9B, offset: 0x9B, size: 0x8, addend: 0x0, symName: _addTemp, symObjAddr: 0xAC, symBinAddr: 0x100003618, symSize: 0x390 }
-  - { offsetInCU: 0xF7, offset: 0xF7, size: 0x8, addend: 0x0, symName: _print, symObjAddr: 0x43C, symBinAddr: 0x1000039A8, symSize: 0x11C }
-  - { offsetInCU: 0x145, offset: 0x145, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x558, symBinAddr: 0x100003AC4, symSize: 0x384 }
+  - { offsetInCU: 0x26, offset: 0x26, size: 0x8, addend: 0x0, symName: _hash, symObjAddr: 0x0, symBinAddr: 0x100003550, symSize: 0xA8 }
+  - { offsetInCU: 0x57, offset: 0x57, size: 0x8, addend: 0x0, symName: _hash, symObjAddr: 0x0, symBinAddr: 0x100003550, symSize: 0xA8 }
+  - { offsetInCU: 0xA9, offset: 0xA9, size: 0x8, addend: 0x0, symName: _addTemp, symObjAddr: 0xA8, symBinAddr: 0x1000035F8, symSize: 0x384 }
+  - { offsetInCU: 0x105, offset: 0x105, size: 0x8, addend: 0x0, symName: _print, symObjAddr: 0x42C, symBinAddr: 0x10000397C, symSize: 0x11C }
+  - { offsetInCU: 0x153, offset: 0x153, size: 0x8, addend: 0x0, symName: _main, symObjAddr: 0x548, symBinAddr: 0x100003A98, symSize: 0x3D4 }
 ...

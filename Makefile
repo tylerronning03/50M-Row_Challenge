@@ -1,5 +1,5 @@
 process_measurements:
-	gcc -o process_measurements main.c
+	gcc -O1 -o process_measurements main.c
 clean:
 	rm -f process_measurements
 
